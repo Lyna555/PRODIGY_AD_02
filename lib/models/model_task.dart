@@ -49,4 +49,24 @@ class Task {
     final parts = time.split(':');
     return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
+
+  Task copyWith({
+    int? id,
+    String? name,
+    int? isDone,
+    String? date,
+    String? startTime,
+    String? endTime,
+    int? notify,
+  }) {
+    return Task(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      isDone: isDone ?? this.isDone,
+      date: date ?? this.date,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      notify: notify ?? this.notify,
+    );
+  }
 }

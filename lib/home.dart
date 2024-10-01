@@ -132,110 +132,183 @@ class _HomeState extends State<Home> {
 
   Future<void> _showAddTaskForm() async {
     TextEditingController nameController = TextEditingController();
+    FocusNode nameFocusNode = FocusNode();
     DateTime? selectedDate;
     TimeOfDay? startTime;
     TimeOfDay? endTime;
     bool notifyUser = false;
+    String? endTimeErrorMessage;
+    String? startTimeErrorMessage;
+
+    bool isFormValid() {
+      return nameController.text.isNotEmpty &&
+          selectedDate != null &&
+          startTime != null &&
+          endTime != null &&
+          endTimeErrorMessage == null;
+    }
 
     await showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Task Name',
-                ),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    focusNode: nameFocusNode,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      labelText: 'Task Name',
+                      labelStyle: TextStyle(
+                        color: nameController.text.isEmpty
+                            ? Colors.red
+                            : Colors.deepOrange,
+                      ),
+                    ),
+                    onSubmitted: (_) {
+                      nameFocusNode.unfocus();
+                    },
+                  ),
+                  ListTile(
+                    title: Text(selectedDate == null
+                        ? 'Select Date'
+                        : 'Date: ${selectedDate?.toLocal().toString().split(' ')[0]}'),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      nameFocusNode.unfocus();
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2101),
+                      );
+                      if (pickedDate != null) {
+                        setModalState(() {
+                          selectedDate = pickedDate;
+                        });
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(startTime == null
+                        ? 'Start Time'
+                        : 'Start Time: ${startTime?.format(context)}'),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      nameFocusNode.unfocus();
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay.now(),
+                      );
+                      if (pickedTime != null) {
+                        setModalState(() {
+                          if (selectedDate?.day == DateTime.now().day &&
+                              selectedDate?.month == DateTime.now().month &&
+                              selectedDate?.year == DateTime.now().year &&
+                              ((pickedTime.hour < TimeOfDay.now().hour &&
+                                      pickedTime.minute <
+                                          TimeOfDay.now().minute) ||
+                                  (pickedTime.hour == TimeOfDay.now().hour &&
+                                      pickedTime.minute <
+                                          TimeOfDay.now().minute) ||
+                                  (pickedTime.hour < TimeOfDay.now().hour &&
+                                      pickedTime.minute ==
+                                          TimeOfDay.now().minute))) {
+                            startTimeErrorMessage =
+                                "*Start time should be greater than current date and time";
+                          } else {
+                            startTime = pickedTime;
+                            startTimeErrorMessage = null;
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  if (startTimeErrorMessage != null)
+                    Text(
+                      startTimeErrorMessage!,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ListTile(
+                    title: Text(endTime == null
+                        ? 'End Time'
+                        : 'End Time: ${endTime?.format(context)}'),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      nameFocusNode.unfocus();
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: startTime!,
+                      );
+                      if (pickedTime != null) {
+                        setModalState(() {
+                          if (pickedTime.hour > startTime!.hour ||
+                              (pickedTime.hour == startTime!.hour &&
+                                  pickedTime.minute >= startTime!.minute)) {
+                            endTime = pickedTime;
+                            endTimeErrorMessage = null;
+                          } else {
+                            endTimeErrorMessage =
+                                "*End time cannot be earlier than start time";
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  if (endTimeErrorMessage != null)
+                    Text(
+                      endTimeErrorMessage!,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    title: const Text('Notify me'),
+                    value: notifyUser,
+                    onChanged: (value) {
+                      setModalState(() {
+                        notifyUser = value;
+                      });
+                    },
+                  ),
+                  ElevatedButton(
+                    onPressed: isFormValid()
+                        ? () async {
+                            if (isFormValid()) {
+                              Task newTask = Task(
+                                name: nameController.text,
+                                isDone: 0,
+                                date: selectedDate!.toIso8601String(),
+                                startTime: Task.timeOfDayToString(startTime!),
+                                endTime: Task.timeOfDayToString(endTime!),
+                                notify: notifyUser ? 1 : 0,
+                              );
+
+                              int taskId =
+                                  await _taskHelper.createTask(newTask);
+                              newTask = newTask.copyWith(id: taskId);
+
+                              if (notifyUser) {
+                                await _scheduleNotification(newTask);
+                              }
+
+                              _loadTasks();
+                              Navigator.pop(context);
+                            }
+                          }
+                        : null,
+                    child: const Text('Add Task'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              ListTile(
-                title: Text(selectedDate == null
-                    ? 'Select Date'
-                    : 'Date: ${selectedDate?.toLocal().toString().split(' ')[0]}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: DateTime.now(),
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2101),
-                  );
-                  if (pickedDate != null) {
-                    setState(() {
-                      selectedDate = pickedDate;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 10),
-              ListTile(
-                title: Text(startTime == null
-                    ? 'Start Time'
-                    : 'Start Time: ${startTime?.format(context)}'),
-                trailing: const Icon(Icons.access_time),
-                onTap: () async {
-                  TimeOfDay? pickedTime = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.now(),
-                  );
-                  if (pickedTime != null) {
-                    setState(() {
-                      startTime = pickedTime;
-                    });
-                  }
-                },
-              ),
-              ListTile(
-                title: Text(endTime == null
-                    ? 'End Time'
-                    : 'End Time: ${endTime?.format(context)}'),
-                trailing: const Icon(Icons.access_time),
-                onTap: () async {
-                  TimeOfDay? pickedTime = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay.now(),
-                  );
-                  if (pickedTime != null) {
-                    setState(() {
-                      endTime = pickedTime;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 10),
-              SwitchListTile(
-                title: const Text('Notify me'),
-                value: notifyUser,
-                onChanged: (value) {
-                  setState(() {
-                    notifyUser = value;
-                  });
-                },
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (nameController.text.isNotEmpty) {
-                    Task newTask = Task(
-                        name: nameController.text,
-                        isDone: 0,
-                        date: selectedDate!.toIso8601String(),
-                        startTime: Task.timeOfDayToString(startTime!),
-                        endTime: Task.timeOfDayToString(endTime!),
-                        notify: 0);
-                    await _taskHelper.createTask(newTask);
-                    await _scheduleNotification(newTask);
-                    _loadTasks();
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Add Task'),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -246,6 +319,7 @@ class _HomeState extends State<Home> {
 
     TextEditingController nameController =
         TextEditingController(text: taskToEdit.name);
+    FocusNode nameFocusNode = FocusNode();
 
     DateTime selectedDate =
         DateTime.parse(taskToEdit.date ?? DateTime.now().toIso8601String());
@@ -253,103 +327,162 @@ class _HomeState extends State<Home> {
     TimeOfDay endTime = Task.stringToTimeOfDay(taskToEdit.endTime ?? '');
     bool notifyUser = taskToEdit.notify == 1;
 
+    String? startTimeErrorMessage;
+    String? endTimeErrorMessage;
+
+    bool isFormValid() {
+      return nameController.text.isNotEmpty &&
+          selectedDate != null &&
+          startTime != null &&
+          endTime != null &&
+          endTimeErrorMessage == null;
+    }
+
     await showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Task Name',
-                ),
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    focusNode: nameFocusNode,
+                    onSubmitted: (_) {
+                      nameFocusNode.unfocus();
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Task Name',
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ListTile(
+                    title: Text(
+                        'Date: ${selectedDate.toLocal().toString().split(' ')[0]}'),
+                    trailing: const Icon(Icons.calendar_today),
+                    onTap: () async {
+                      nameFocusNode.unfocus();
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: selectedDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2101),
+                      );
+                      if (pickedDate != null) {
+                        setModalState(() {
+                          selectedDate = pickedDate;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  ListTile(
+                    title: Text(startTime == null
+                        ? 'Start Time'
+                        : 'Start Time: ${startTime.format(context)}'),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      nameFocusNode.unfocus();
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: startTime,
+                      );
+                      if (pickedTime != null) {
+                        setModalState(() {
+                          if (selectedDate.day == DateTime.now().day &&
+                              selectedDate.month == DateTime.now().month &&
+                              selectedDate.year == DateTime.now().year &&
+                              (pickedTime.hour < TimeOfDay.now().hour ||
+                                  (pickedTime.hour == TimeOfDay.now().hour &&
+                                      pickedTime.minute <
+                                          TimeOfDay.now().minute))) {
+                            startTimeErrorMessage =
+                                "*Start time should be greater than the current time";
+                          } else {
+                            startTime = pickedTime;
+                            startTimeErrorMessage = null;
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  if (startTimeErrorMessage != null)
+                    Text(
+                      startTimeErrorMessage!,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ListTile(
+                    title: Text(endTime == null
+                        ? 'End Time'
+                        : 'End Time: ${endTime.format(context)}'),
+                    trailing: const Icon(Icons.access_time),
+                    onTap: () async {
+                      nameFocusNode.unfocus();
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: startTime,
+                      );
+                      if (pickedTime != null) {
+                        setModalState(() {
+                          if (pickedTime.hour > startTime.hour ||
+                              (pickedTime.hour == startTime.hour &&
+                                  pickedTime.minute >= startTime.minute)) {
+                            endTime = pickedTime;
+                            endTimeErrorMessage = null;
+                          } else {
+                            endTimeErrorMessage =
+                                "*End time cannot be earlier than the start time";
+                          }
+                        });
+                      }
+                    },
+                  ),
+                  if (endTimeErrorMessage != null)
+                    Text(
+                      endTimeErrorMessage!,
+                      textAlign: TextAlign.start,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  const SizedBox(height: 10),
+                  SwitchListTile(
+                    title: const Text('Notify me'),
+                    value: notifyUser,
+                    onChanged: (value) {
+                      setModalState(() {
+                        notifyUser = value;
+                      });
+                    },
+                  ),
+                  ElevatedButton(
+                    onPressed: isFormValid()
+                        ? () async {
+                            if (isFormValid()) {
+                              Task updatedTask = Task(
+                                id: taskToEdit.id,
+                                name: nameController.text,
+                                isDone: taskToEdit.isDone,
+                                date: selectedDate.toIso8601String(),
+                                startTime: Task.timeOfDayToString(startTime),
+                                endTime: Task.timeOfDayToString(endTime),
+                                notify: notifyUser ? 1 : 0,
+                              );
+                              await _taskHelper.updateTask(updatedTask);
+                              await _scheduleNotification(updatedTask);
+                              _loadTasks();
+                              Navigator.pop(context);
+                            }
+                          }
+                        : null,
+                    child: const Text('Update Task'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
-              ListTile(
-                title: Text(
-                    'Date: ${selectedDate.toLocal().toString().split(' ')[0]}'),
-                trailing: const Icon(Icons.calendar_today),
-                onTap: () async {
-                  DateTime? pickedDate = await showDatePicker(
-                    context: context,
-                    initialDate: selectedDate,
-                    firstDate: DateTime(2000),
-                    lastDate: DateTime(2101),
-                  );
-                  if (pickedDate != null) {
-                    setState(() {
-                      selectedDate = pickedDate;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 10),
-              ListTile(
-                title: Text('Start Time: ${startTime.format(context)}'),
-                trailing: const Icon(Icons.access_time),
-                onTap: () async {
-                  TimeOfDay? pickedTime = await showTimePicker(
-                    context: context,
-                    initialTime: startTime,
-                  );
-                  if (pickedTime != null) {
-                    setState(() {
-                      startTime = pickedTime;
-                    });
-                  }
-                },
-              ),
-              ListTile(
-                title: Text('End Time: ${endTime.format(context)}'),
-                trailing: const Icon(Icons.access_time),
-                onTap: () async {
-                  TimeOfDay? pickedTime = await showTimePicker(
-                    context: context,
-                    initialTime: endTime,
-                  );
-                  if (pickedTime != null) {
-                    setState(() {
-                      endTime = pickedTime;
-                    });
-                  }
-                },
-              ),
-              const SizedBox(height: 10),
-              SwitchListTile(
-                title: const Text('Notify me'),
-                value: notifyUser,
-                onChanged: (value) {
-                  setState(() {
-                    notifyUser = value;
-                  });
-                },
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  if (nameController.text.isNotEmpty) {
-                    Task updatedTask = Task(
-                      id: taskToEdit.id,
-                      name: nameController.text,
-                      isDone: taskToEdit.isDone,
-                      date: selectedDate.toIso8601String(),
-                      // Save the updated date
-                      startTime: Task.timeOfDayToString(startTime),
-                      endTime: Task.timeOfDayToString(endTime),
-                      notify: notifyUser ? 1 : 0,
-                    );
-                    await _taskHelper.updateTask(updatedTask);
-                    await _scheduleNotification(updatedTask);
-                    _loadTasks();
-                    Navigator.pop(context);
-                  }
-                },
-                child: const Text('Update Task'),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -358,9 +491,6 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-      ),
       body: Padding(
         padding: const EdgeInsets.all(5.0),
         child: ListView.builder(
@@ -443,9 +573,7 @@ class _HomeState extends State<Home> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _showAddTaskForm,
-        child: const Icon(Icons.add),
-      ),
+          onPressed: _showAddTaskForm, child: const Icon(Icons.add)),
     );
   }
 }
