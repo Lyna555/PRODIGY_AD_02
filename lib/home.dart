@@ -162,13 +162,8 @@ class _HomeState extends State<Home> {
                     controller: nameController,
                     focusNode: nameFocusNode,
                     autofocus: true,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: 'Task Name',
-                      labelStyle: TextStyle(
-                        color: nameController.text.isEmpty
-                            ? Colors.red
-                            : Colors.deepOrange,
-                      ),
                     ),
                     onSubmitted: (_) {
                       nameFocusNode.unfocus();
@@ -491,89 +486,102 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(5.0),
-        child: ListView.builder(
-          itemCount: tasks.length,
-          itemBuilder: (context, index) {
-            TextEditingController controller =
-                TextEditingController(text: tasks[index].name);
+      body: Column(
+        children: [
+          Image.asset(
+            'assets/images/header.png',
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+          const SizedBox(height: 10.0),
+          Expanded(
+            child: ListView.builder(
+              itemCount: tasks.length,
+              itemBuilder: (context, index) {
+                TextEditingController controller =
+                    TextEditingController(text: tasks[index].name);
 
-            String formattedStartTime =
-                tasks[index].startTime ?? 'No Start Time';
-            String formattedEndTime = tasks[index].endTime ?? 'No End Time';
-            String formattedDate = tasks[index].date != null
-                ? DateFormat('yyyy-MM-dd')
-                    .format(DateTime.parse(tasks[index].date!))
-                : 'Today';
+                String formattedStartTime =
+                    tasks[index].startTime ?? 'No Start Time';
+                String formattedEndTime = tasks[index].endTime ?? 'No End Time';
+                String formattedDate = tasks[index].date != null
+                    ? DateFormat('yyyy-MM-dd')
+                        .format(DateTime.parse(tasks[index].date!))
+                    : 'Today';
 
-            controller.selection = TextSelection.fromPosition(
-              TextPosition(offset: controller.text.length),
-            );
+                controller.selection = TextSelection.fromPosition(
+                  TextPosition(offset: controller.text.length),
+                );
 
-            return CheckboxListTile(
-              controlAffinity: ListTileControlAffinity.leading,
-              title: Row(
-                children: [
-                  Expanded(
-                      flex: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            tasks[index].name,
-                            style: TextStyle(
-                              fontSize: 20.0,
-                              color: tasks[index].isDone == 1
-                                  ? Colors.black26
-                                  : Colors.black,
-                              decoration: tasks[index].isDone == 1
-                                  ? TextDecoration.lineThrough
-                                  : TextDecoration.none,
+                return CheckboxListTile(
+                  controlAffinity: ListTileControlAffinity.leading,
+                  title: Row(
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tasks[index].name,
+                              style: TextStyle(
+                                fontSize: 20.0,
+                                color: tasks[index].isDone == 1
+                                    ? Colors.black26
+                                    : Colors.black,
+                                decoration: tasks[index].isDone == 1
+                                    ? TextDecoration.lineThrough
+                                    : TextDecoration.none,
+                              ),
                             ),
-                          ),
-                          Text(
-                            formattedDate,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
+                            Text(
+                              formattedDate,
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          Text(
-                            '$formattedStartTime - $formattedEndTime',
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
+                            Text(
+                              '$formattedStartTime - $formattedEndTime',
+                              style: TextStyle(
+                                color: Colors.grey[600],
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                        ],
-                      )),
-                  Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => _showEditTaskForm(index),
-                            icon: const Icon(Icons.edit),
-                            color: Colors.blue[800],
-                          ),
-                          IconButton(
-                            onPressed: () => _deleteTask(index),
-                            icon: const Icon(Icons.delete),
-                            color: Colors.red,
-                          ),
-                        ],
-                      ))
-                ],
-              ),
-              value: tasks[index].isDone == 1,
-              onChanged: (value) => _toggleCheckbox(index, value),
-            );
-          },
-        ),
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () => _showEditTaskForm(index),
+                              icon: const Icon(Icons.edit),
+                              color: Colors.purple[300],
+                            ),
+                            IconButton(
+                              onPressed: () => _deleteTask(index),
+                              icon: const Icon(Icons.delete),
+                              color: Colors.pink[300],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  value: tasks[index].isDone == 1,
+                  onChanged: (value) => _toggleCheckbox(index, value),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
-          onPressed: _showAddTaskForm, child: const Icon(Icons.add)),
+        onPressed: _showAddTaskForm,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }
