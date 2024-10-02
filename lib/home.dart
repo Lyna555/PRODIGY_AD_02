@@ -488,12 +488,24 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: Column(
         children: [
-          Image.asset(
-            'assets/images/header.png',
-            width: double.infinity,
-            fit: BoxFit.cover,
+          Container(
+            decoration: BoxDecoration(
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.4),
+                  spreadRadius: 0,
+                  blurRadius: 7,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Image.asset(
+              'assets/images/header.png',
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
           ),
-          const SizedBox(height: 10.0),
+          const SizedBox(height: 20.0),
           Expanded(
             child: ListView.builder(
               itemCount: tasks.length,
