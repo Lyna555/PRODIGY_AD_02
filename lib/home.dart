@@ -75,7 +75,7 @@ class _HomeState extends State<Home> {
 
       await flutterLocalNotificationsPlugin.zonedSchedule(
         task.id!,
-        'To Do List',
+        'Let\'s do it',
         'Your task "${task.name}" is starting soon!',
         tz.TZDateTime.from(notificationTime, tz.local),
         const NotificationDetails(
