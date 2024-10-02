@@ -21,7 +21,7 @@ class _HomeState extends State<Home> {
   final TaskHelper _taskHelper = TaskHelper();
 
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
@@ -34,17 +34,17 @@ class _HomeState extends State<Home> {
 
   Future<void> _initializeNotifications() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('ic_notification');
+    AndroidInitializationSettings('ic_notification');
 
     const InitializationSettings initializationSettings =
-        InitializationSettings(android: initializationSettingsAndroid);
+    InitializationSettings(android: initializationSettingsAndroid);
 
     await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
     if (await flutterLocalNotificationsPlugin
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
-            ?.requestPermission() ??
+        .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestPermission() ??
         false) {
       debugPrint('Permission granted');
     } else {
@@ -90,7 +90,7 @@ class _HomeState extends State<Home> {
         ),
         androidAllowWhileIdle: true,
         uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
+        UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.dateAndTime,
       );
     }
@@ -172,7 +172,8 @@ class _HomeState extends State<Home> {
                   ListTile(
                     title: Text(selectedDate == null
                         ? 'Select Date'
-                        : 'Date: ${selectedDate?.toLocal().toString().split(' ')[0]}'),
+                        : 'Date: ${selectedDate?.toLocal().toString().split(
+                        ' ')[0]}'),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
                       nameFocusNode.unfocus();
@@ -202,20 +203,38 @@ class _HomeState extends State<Home> {
                       );
                       if (pickedTime != null) {
                         setModalState(() {
-                          if (selectedDate?.day == DateTime.now().day &&
-                              selectedDate?.month == DateTime.now().month &&
-                              selectedDate?.year == DateTime.now().year &&
-                              ((pickedTime.hour < TimeOfDay.now().hour &&
+                          if (selectedDate?.day == DateTime
+                              .now()
+                              .day &&
+                              selectedDate?.month == DateTime
+                                  .now()
+                                  .month &&
+                              selectedDate?.year == DateTime
+                                  .now()
+                                  .year &&
+                              ((pickedTime.hour < TimeOfDay
+                                  .now()
+                                  .hour &&
+                                  pickedTime.minute <
+                                      TimeOfDay
+                                          .now()
+                                          .minute) ||
+                                  (pickedTime.hour == TimeOfDay
+                                      .now()
+                                      .hour &&
                                       pickedTime.minute <
-                                          TimeOfDay.now().minute) ||
-                                  (pickedTime.hour == TimeOfDay.now().hour &&
-                                      pickedTime.minute <
-                                          TimeOfDay.now().minute) ||
-                                  (pickedTime.hour < TimeOfDay.now().hour &&
+                                          TimeOfDay
+                                              .now()
+                                              .minute) ||
+                                  (pickedTime.hour < TimeOfDay
+                                      .now()
+                                      .hour &&
                                       pickedTime.minute ==
-                                          TimeOfDay.now().minute))) {
+                                          TimeOfDay
+                                              .now()
+                                              .minute))) {
                             startTimeErrorMessage =
-                                "*Start time should be greater than current date and time";
+                            "*Start time should be greater than current date and time";
                           } else {
                             startTime = pickedTime;
                             startTimeErrorMessage = null;
@@ -250,7 +269,7 @@ class _HomeState extends State<Home> {
                             endTimeErrorMessage = null;
                           } else {
                             endTimeErrorMessage =
-                                "*End time cannot be earlier than start time";
+                            "*End time cannot be earlier than start time";
                           }
                         });
                       }
@@ -275,28 +294,28 @@ class _HomeState extends State<Home> {
                   ElevatedButton(
                     onPressed: isFormValid()
                         ? () async {
-                            if (isFormValid()) {
-                              Task newTask = Task(
-                                name: nameController.text,
-                                isDone: 0,
-                                date: selectedDate!.toIso8601String(),
-                                startTime: Task.timeOfDayToString(startTime!),
-                                endTime: Task.timeOfDayToString(endTime!),
-                                notify: notifyUser ? 1 : 0,
-                              );
+                      if (isFormValid()) {
+                        Task newTask = Task(
+                          name: nameController.text,
+                          isDone: 0,
+                          date: selectedDate!.toIso8601String(),
+                          startTime: Task.timeOfDayToString(startTime!),
+                          endTime: Task.timeOfDayToString(endTime!),
+                          notify: notifyUser ? 1 : 0,
+                        );
 
-                              int taskId =
-                                  await _taskHelper.createTask(newTask);
-                              newTask = newTask.copyWith(id: taskId);
+                        int taskId =
+                        await _taskHelper.createTask(newTask);
+                        newTask = newTask.copyWith(id: taskId);
 
-                              if (notifyUser) {
-                                await _scheduleNotification(newTask);
-                              }
+                        if (notifyUser) {
+                          await _scheduleNotification(newTask);
+                        }
 
-                              _loadTasks();
-                              Navigator.pop(context);
-                            }
-                          }
+                        _loadTasks();
+                        Navigator.pop(context);
+                      }
+                    }
                         : null,
                     child: const Text('Add Task'),
                   ),
@@ -313,11 +332,11 @@ class _HomeState extends State<Home> {
     Task taskToEdit = tasks[index];
 
     TextEditingController nameController =
-        TextEditingController(text: taskToEdit.name);
+    TextEditingController(text: taskToEdit.name);
     FocusNode nameFocusNode = FocusNode();
 
     DateTime selectedDate =
-        DateTime.parse(taskToEdit.date ?? DateTime.now().toIso8601String());
+    DateTime.parse(taskToEdit.date ?? DateTime.now().toIso8601String());
     TimeOfDay startTime = Task.stringToTimeOfDay(taskToEdit.startTime ?? '');
     TimeOfDay endTime = Task.stringToTimeOfDay(taskToEdit.endTime ?? '');
     bool notifyUser = taskToEdit.notify == 1;
@@ -356,7 +375,8 @@ class _HomeState extends State<Home> {
                   const SizedBox(height: 10),
                   ListTile(
                     title: Text(
-                        'Date: ${selectedDate.toLocal().toString().split(' ')[0]}'),
+                        'Date: ${selectedDate.toLocal().toString().split(
+                            ' ')[0]}'),
                     trailing: const Icon(Icons.calendar_today),
                     onTap: () async {
                       nameFocusNode.unfocus();
@@ -387,15 +407,27 @@ class _HomeState extends State<Home> {
                       );
                       if (pickedTime != null) {
                         setModalState(() {
-                          if (selectedDate.day == DateTime.now().day &&
-                              selectedDate.month == DateTime.now().month &&
-                              selectedDate.year == DateTime.now().year &&
-                              (pickedTime.hour < TimeOfDay.now().hour ||
-                                  (pickedTime.hour == TimeOfDay.now().hour &&
+                          if (selectedDate.day == DateTime
+                              .now()
+                              .day &&
+                              selectedDate.month == DateTime
+                                  .now()
+                                  .month &&
+                              selectedDate.year == DateTime
+                                  .now()
+                                  .year &&
+                              (pickedTime.hour < TimeOfDay
+                                  .now()
+                                  .hour ||
+                                  (pickedTime.hour == TimeOfDay
+                                      .now()
+                                      .hour &&
                                       pickedTime.minute <
-                                          TimeOfDay.now().minute))) {
+                                          TimeOfDay
+                                              .now()
+                                              .minute))) {
                             startTimeErrorMessage =
-                                "*Start time should be greater than the current time";
+                            "*Start time should be greater than the current time";
                           } else {
                             startTime = pickedTime;
                             startTimeErrorMessage = null;
@@ -430,7 +462,7 @@ class _HomeState extends State<Home> {
                             endTimeErrorMessage = null;
                           } else {
                             endTimeErrorMessage =
-                                "*End time cannot be earlier than the start time";
+                            "*End time cannot be earlier than the start time";
                           }
                         });
                       }
@@ -455,22 +487,22 @@ class _HomeState extends State<Home> {
                   ElevatedButton(
                     onPressed: isFormValid()
                         ? () async {
-                            if (isFormValid()) {
-                              Task updatedTask = Task(
-                                id: taskToEdit.id,
-                                name: nameController.text,
-                                isDone: taskToEdit.isDone,
-                                date: selectedDate.toIso8601String(),
-                                startTime: Task.timeOfDayToString(startTime),
-                                endTime: Task.timeOfDayToString(endTime),
-                                notify: notifyUser ? 1 : 0,
-                              );
-                              await _taskHelper.updateTask(updatedTask);
-                              await _scheduleNotification(updatedTask);
-                              _loadTasks();
-                              Navigator.pop(context);
-                            }
-                          }
+                      if (isFormValid()) {
+                        Task updatedTask = Task(
+                          id: taskToEdit.id,
+                          name: nameController.text,
+                          isDone: taskToEdit.isDone,
+                          date: selectedDate.toIso8601String(),
+                          startTime: Task.timeOfDayToString(startTime),
+                          endTime: Task.timeOfDayToString(endTime),
+                          notify: notifyUser ? 1 : 0,
+                        );
+                        await _taskHelper.updateTask(updatedTask);
+                        await _scheduleNotification(updatedTask);
+                        _loadTasks();
+                        Navigator.pop(context);
+                      }
+                    }
                         : null,
                     child: const Text('Update Task'),
                   ),
@@ -488,6 +520,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       body: Column(
         children: [
+          // Header Image with Shadow
           Container(
             decoration: BoxDecoration(
               boxShadow: [
@@ -506,19 +539,43 @@ class _HomeState extends State<Home> {
             ),
           ),
           const SizedBox(height: 20.0),
-          Expanded(
+
+          // Conditional Rendering: Check if there are tasks
+          tasks.isEmpty
+              ? Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Image.asset(
+                  'assets/images/empty.jpg',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.cover,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'No Tasks Available',
+                  style: TextStyle(
+                    fontSize: 18.0,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          )
+              : Expanded(
             child: ListView.builder(
               itemCount: tasks.length,
               itemBuilder: (context, index) {
                 TextEditingController controller =
-                    TextEditingController(text: tasks[index].name);
+                TextEditingController(text: tasks[index].name);
 
                 String formattedStartTime =
                     tasks[index].startTime ?? 'No Start Time';
                 String formattedEndTime = tasks[index].endTime ?? 'No End Time';
                 String formattedDate = tasks[index].date != null
                     ? DateFormat('yyyy-MM-dd')
-                        .format(DateTime.parse(tasks[index].date!))
+                    .format(DateTime.parse(tasks[index].date!))
                     : 'Today';
 
                 controller.selection = TextSelection.fromPosition(
